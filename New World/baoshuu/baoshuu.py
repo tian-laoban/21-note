@@ -1,31 +1,41 @@
 import requests
-# http://baoshuu.com/TXT/list26_1.html
-# http://baoshuu.com/TXT/list2_1.html
-# https://www.txt99.org/html/list-xuanhuan-1.html
 from lxml import etree
+import rarfile
+import os
+from time import strptime
 
 
 headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:100.0) Gecko/20100101 Firefox/100.0'}
 
-def 耽美():
-    dom = etree.HTML(requests.get('http://baoshuu.com/TXT/list26_1.html',headers = headers).text)
-    book_list = dom.xpath('//*[@class="newDate"]')
-    for book in book_list:
-        public_date = book.xpath('./text()')[0].strip()
-        if public_date == '2022-05-17':
-            url = 'http://baoshuu.com' + book.xpath('./../../h2/a/@href')[0].strip()
-            download(url)
-            # depress()
-            # print(book.xpath('./../../'))
+def main(choose:str, date:str):
+    _ = 'http://baoshuu.com/TXT/list2'
+    if choose == '1':
+        _ += '6_%s.html'
+    if choose == '2':
+        _ += '_%s.html'
 
-    pass
+    need_date = strptime(date, '%Y-%m-%d')
+    for page in range(1, 10000):
+        dom = etree.HTML(requests.get(_%page,headers = headers).text)
+        book_list = dom.xpath('//*[@class="newDate"]')
+        for book in book_list:
+            public_date = strptime(book.xpath('./text()')[0].strip(), '%Y-%m-%d')
+            if public_date > need_date:
+                continue
+            if public_date == need_date:
+                url = 'http://baoshuu.com' + book.xpath('./../../h2/a/@href')[0].strip()
+                filename = 下载(url)
+                try:
+                    解压(filename)
+                except:
+                    print('解压失败：',filename)
+                    continue
+                os.remove(filename)
+            if public_date < need_date:
+                exit()
 
 
-def 热门():
-    pass
-
-
-def download(url):
+def 下载(url):
     headers = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
     'Accept-Language': 'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2',
@@ -56,10 +66,12 @@ def download(url):
         f.write(requests.get(url,headers = headers).content)
     return filename
 
-def depress(filename):
-    pass
+def 解压(filename):
+    rf = rarfile.RarFile(filename)
+    rf.extractall('下载')
 
 
 
-
-耽美()
+if __name__ == '__main__':
+    choose = input('1.耽美\n2.热门\n请选择：')
+    main(choose, date = input('输入日期：'))
